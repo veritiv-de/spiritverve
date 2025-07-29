@@ -61,7 +61,9 @@ function App() {
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'https://your-api-id.execute-api.us-east-1.amazonaws.com/main';
       
-      console.log('Calling Redshift query endpoint:', `${apiUrl}/redshift`);
+      console.log('=== REDSHIFT QUERY REQUEST ===');
+      console.log('Calling Redshift endpoint:', `${apiUrl}/redshift`);
+      console.log('Timestamp:', new Date().toISOString());
       
       const response = await fetch(`${apiUrl}/redshift`, {
         method: 'GET',
@@ -70,20 +72,24 @@ function App() {
         },
       });
       
-      console.log('Redshift response status:', response.status);
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      const responseText = await response.text();
+      console.log('Raw response body:', responseText);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Redshift error response body:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        console.error('HTTP error response:', responseText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`);
       }
       
-      const data = await response.json();
-      console.log('Redshift data received:', data);
+      const data = JSON.parse(responseText);
+      console.log('Parsed Redshift data:', data);
       setRedshiftData(data);
     } catch (err) {
+      console.error('=== REDSHIFT QUERY ERROR ===');
+      console.error('Error details:', err);
       setRedshiftError(`Failed to query Redshift: ${err.message}`);
-      console.error('Error calling Redshift:', err);
     } finally {
       setRedshiftLoading(false);
     }
@@ -138,6 +144,17 @@ function App() {
               <p><strong>Message:</strong> {redshiftData.message}</p>
               <p><strong>Rows Returned:</strong> {redshiftData.rowCount}</p>
               <p><strong>Timestamp:</strong> {redshiftData.timestamp}</p>
+              <p><strong>Request ID:</strong> {redshiftData.requestId}</p>
+              
+              {redshiftData.debug && (
+                <div className="debug-info">
+                  <h4>Debug Information:</h4>
+                  <p><strong>Connection Host:</strong> {redshiftData.debug.connectionHost}</p>
+                  <p><strong>Connection Port:</strong> {redshiftData.debug.connectionPort}</p>
+                  <p><strong>Database:</strong> {redshiftData.debug.database}</p>
+                  <p><strong>User:</strong> {redshiftData.debug.user}</p>
+                </div>
+              )}
               
               <h4>Data:</h4>
               <div className="data-table">
@@ -166,9 +183,28 @@ function App() {
           )}
           
           {redshiftError && (
-            <p className="backend-message error">
-              {redshiftError}
-            </p>
+            <div className="redshift-error">
+              <h3>❌ Redshift Query Error:</h3>
+              <p className="error-message">{redshiftError}</p>
+              
+              {/* Try to parse error response for detailed info */}
+              {redshiftError.includes('body:') && (
+                <div className="error-details">
+                  <h4>Error Details:</h4>
+                  <pre className="error-json">
+                    {(() => {
+                      try {
+                        const errorBody = redshiftError.split('body: ')[1];
+                        const parsedError = JSON.parse(errorBody);
+                        return JSON.stringify(parsedError, null, 2);
+                      } catch (e) {
+                        return redshiftError;
+                      }
+                    })()}
+                  </pre>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </header>
