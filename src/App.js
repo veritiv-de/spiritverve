@@ -5,6 +5,9 @@ function App() {
   const [backendMessage, setBackendMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [redshiftData, setRedshiftData] = useState(null);
+  const [redshiftLoading, setRedshiftLoading] = useState(false);
+  const [redshiftError, setRedshiftError] = useState('');
 
   const callBackendAPI = async () => {
     setLoading(true);
@@ -13,7 +16,7 @@ function App() {
     try {
       // This will be the Amplify API endpoint
       // In production, this will be replaced with the actual API Gateway URL
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://your-api-id.execute-api.us-east-1.amazonaws.com/dev';
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://your-api-id.execute-api.us-east-1.amazonaws.com/main';
       
       console.log('Environment variable REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
       console.log('Using API URL:', apiUrl);
@@ -50,6 +53,42 @@ function App() {
     }
   };
 
+  const callRedshiftQuery = async () => {
+    setRedshiftLoading(true);
+    setRedshiftError('');
+    setRedshiftData(null);
+    
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://your-api-id.execute-api.us-east-1.amazonaws.com/main';
+      
+      console.log('Calling Redshift query endpoint:', `${apiUrl}/redshift`);
+      
+      const response = await fetch(`${apiUrl}/redshift`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Redshift response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Redshift error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Redshift data received:', data);
+      setRedshiftData(data);
+    } catch (err) {
+      setRedshiftError(`Failed to query Redshift: ${err.message}`);
+      console.error('Error calling Redshift:', err);
+    } finally {
+      setRedshiftLoading(false);
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -79,6 +118,56 @@ function App() {
           {error && (
             <p className="backend-message error">
               {error}
+            </p>
+          )}
+        </div>
+
+        <div className="redshift-section">
+          <h2>Redshift Query:</h2>
+          <button 
+            onClick={callRedshiftQuery} 
+            disabled={redshiftLoading}
+            className="api-button redshift-button"
+          >
+            {redshiftLoading ? 'Querying Redshift...' : 'Query Redshift (SELECT * FROM edm.f_inv LIMIT 10)'}
+          </button>
+          
+          {redshiftData && (
+            <div className="redshift-results">
+              <h3>Query Results:</h3>
+              <p><strong>Message:</strong> {redshiftData.message}</p>
+              <p><strong>Rows Returned:</strong> {redshiftData.rowCount}</p>
+              <p><strong>Timestamp:</strong> {redshiftData.timestamp}</p>
+              
+              <h4>Data:</h4>
+              <div className="data-table">
+                <table>
+                  <thead>
+                    <tr>
+                      {redshiftData.data.length > 0 && 
+                        Object.keys(redshiftData.data[0]).map(key => (
+                          <th key={key}>{key}</th>
+                        ))
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {redshiftData.data.map((row, index) => (
+                      <tr key={index}>
+                        {Object.values(row).map((value, valueIndex) => (
+                          <td key={valueIndex}>{String(value)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          
+          {redshiftError && (
+            <p className="backend-message error">
+              {redshiftError}
             </p>
           )}
         </div>
