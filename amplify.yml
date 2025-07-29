@@ -4,7 +4,9 @@ backend:
     build:
       commands:
         - '# Execute Amplify CLI with the helper script'
+        - echo "Starting backend deployment..."
         - amplifyPush --simple
+        - echo "Backend deployment completed"
 frontend:
   phases:
     preBuild:

@@ -5,7 +5,7 @@ const { Client } = require('pg');
 
 exports.handler = async (event) => {
     console.log(`=== LAMBDA FUNCTION STARTED ===`);
-    // Force deployment - 2025-07-29T16:33:06.413Z
+    // Force deployment - 2025-07-29T18:00:00.000Z
     console.log(`Event: ${JSON.stringify(event, null, 2)}`);
     console.log(`HTTP Method: ${event.httpMethod}`);
     console.log(`Path: ${event.path}`);
