@@ -1,0 +1,14 @@
+{
+  "functionhelloWorldName": {
+    "Fn::GetAtt": [
+      "functionhelloWorld",
+      "Outputs.Name"
+    ]
+  },
+  "functionhelloWorldArn": {
+    "Fn::GetAtt": [
+      "functionhelloWorld",
+      "Outputs.Arn"
+    ]
+  }
+}
