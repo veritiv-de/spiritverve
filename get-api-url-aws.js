@@ -9,7 +9,7 @@ try {
   const teamProviderPath = path.join(__dirname, 'amplify', 'team-provider-info.json');
   const teamProvider = JSON.parse(fs.readFileSync(teamProviderPath, 'utf8'));
   
-  const env = 'dev';
+  const env = 'main';
   const stackName = teamProvider[env].awscloudformation.StackName;
   const region = teamProvider[env].awscloudformation.Region;
   

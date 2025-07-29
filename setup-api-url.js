@@ -6,7 +6,7 @@ class ApiUrlSetup {
   constructor() {
     this.teamProviderPath = path.join(__dirname, 'amplify', 'team-provider-info.json');
     this.teamProvider = JSON.parse(fs.readFileSync(this.teamProviderPath, 'utf8'));
-    this.env = 'dev';
+    this.env = 'main';
     this.stackName = this.teamProvider[this.env].awscloudformation.StackName;
     this.region = this.teamProvider[this.env].awscloudformation.Region;
     this.appId = this.getAppId();

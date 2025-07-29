@@ -1,14 +1,14 @@
 {
-  "dev": {
+  "main": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-helloworldapp-dev-authRole",
-      "UnauthRoleName": "amplify-helloworldapp-dev-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::ACCOUNT-ID:role/amplify-helloworldapp-dev-authRole",
-      "UnauthRoleArn": "arn:aws:iam::ACCOUNT-ID:role/amplify-helloworldapp-dev-unauthRole",
+      "AuthRoleName": "amplify-spiritverve-main-authRole",
+      "UnauthRoleName": "amplify-spiritverve-main-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::ACCOUNT-ID:role/amplify-spiritverve-main-authRole",
+      "UnauthRoleArn": "arn:aws:iam::ACCOUNT-ID:role/amplify-spiritverve-main-unauthRole",
       "Region": "us-east-1",
-      "DeploymentBucketName": "amplify-helloworldapp-dev-deployment",
-      "StackName": "amplify-helloworldapp-dev",
-      "StackId": "arn:aws:cloudformation:us-east-1:ACCOUNT-ID:stack/amplify-helloworldapp-dev/STACK-ID"
+      "DeploymentBucketName": "amplify-spiritverve-main-deployment",
+      "StackName": "amplify-spiritverve-main",
+      "StackId": "arn:aws:iam::ACCOUNT-ID:stack/amplify-spiritverve-main/STACK-ID"
     }
   }
 }
