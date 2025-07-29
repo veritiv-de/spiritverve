@@ -1,0 +1,58 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Custom resource to expose API Gateway URL",
+  "Parameters": {
+    "apihelloworldapiRootUrl": {
+      "Type": "String",
+      "Default": "apihelloworldapiRootUrl"
+    },
+    "env": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "ApiGatewayUrlOutput": {
+      "Type": "AWS::CloudFormation::Output",
+      "Properties": {
+        "Description": "API Gateway Invoke URL",
+        "Value": {
+          "Ref": "apihelloworldapiRootUrl"
+        },
+        "Export": {
+          "Name": {
+            "Fn::Join": [
+              "",
+              [
+                "ApiGatewayUrl-",
+                {
+                  "Ref": "env"
+                }
+              ]
+            ]
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ApiGatewayInvokeUrl": {
+      "Description": "API Gateway Invoke URL for frontend",
+      "Value": {
+        "Ref": "apihelloworldapiRootUrl"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ApiGatewayInvokeUrl-",
+              {
+                "Ref": "env"
+              }
+            ]
+          ]
+        }
+      }
+    }
+  }
+} 

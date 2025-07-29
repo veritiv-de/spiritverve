@@ -1,0 +1,8 @@
+{
+  "apihelloworldapiRootUrl": {
+    "Fn::GetAtt": [
+      "apihelloworldapi",
+      "Outputs.RootUrl"
+    ]
+  }
+} 
