@@ -72,15 +72,23 @@
             }
           }
         },
-        "Role": {
-          "Fn::GetAtt": [
-            "LambdaExecutionRole",
-            "Arn"
-          ]
-        },
+        "Role": "arn:aws:iam::353328443169:role/service-role/hello-world-lambda-role",
         "Runtime": "nodejs18.x",
         "Layers": [],
-        "Timeout": 25
+        "Timeout": 900,
+        "MemorySize": 10240,
+        "EphemeralStorage": {
+          "Size": 10240
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            "sg-045e23d0687f76c74"
+          ],
+          "SubnetIds": [
+            "subnet-0e0626912b145dd06",
+            "subnet-0f02991a028412e8e"
+          ]
+        }
       }
     },
     "LambdaExecutionRole": {
