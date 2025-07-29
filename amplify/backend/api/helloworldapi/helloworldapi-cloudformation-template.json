@@ -303,7 +303,9 @@
       "Type": "AWS::ApiGateway::Deployment",
       "DependsOn": [
         "helloMethod",
-        "helloOptionsMethod"
+        "helloOptionsMethod",
+        "redshiftMethod",
+        "redshiftOptionsMethod"
       ],
       "Properties": {
         "Description": "The Development stage deployment of your API.",
