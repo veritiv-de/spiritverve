@@ -9,6 +9,7 @@
 - **Hosting**: AWS Amplify
 - **API**: API Gateway with Lambda integration
 - **Deployment**: Continuous Deployment via Amplify Console
+- **Configuration**: Robust API Gateway URL management
 
 ## 🛠️ Technology Stack
 
@@ -19,6 +20,7 @@
 | Hosting | AWS Amplify |
 | Deployment | Amplify Console CI/CD |
 | API Routing | API Gateway + Lambda |
+| Configuration | Automated CloudFormation output extraction |
 | Data | None (static string only) |
 | Source Control | Git |
 
@@ -30,6 +32,7 @@
 - Button to call backend API and display returned message
 - Error handling and loading states
 - Responsive design with modern styling
+- Robust API URL configuration with fallbacks
 
 ### Backend
 - API endpoint: `/hello`
@@ -37,6 +40,13 @@
 - Node.js Lambda function deployed via Amplify
 - CORS configured for frontend-backend communication
 - Proper error handling and logging
+
+### Configuration Management
+- **Automated API Gateway URL extraction** from CloudFormation outputs
+- **Amplify Console environment variable management** via AWS CLI
+- **Local development support** with .env file management
+- **Multiple fallback methods** for URL discovery
+- **Comprehensive error handling** and debugging
 
 ## 🚀 Quick Start
 
@@ -54,14 +64,28 @@
    npm install
    ```
 
-2. **Run locally**:
+2. **Set up API Gateway URL** (choose one option):
+   
+   **Option A: Automated Setup (requires AWS CLI)**
+   ```bash
+   node setup-api-url.js
+   ```
+   
+   **Option B: Manual Setup**
+   ```bash
+   node set-env.js
+   # Enter your API Gateway URL when prompted
+   ```
+
+3. **Run locally**:
    ```bash
    npm start
    ```
-   The app will open at `http://localhost:3000`###
- AWS Amplify Deployment
+   The app will open at `http://localhost:3000`
 
-#### Option 1: Amplify CLI (Recommended)
+## 🚀 AWS Amplify Deployment
+
+### Option 1: Amplify CLI (Recommended)
 
 1. **Initialize Amplify project**:
    ```bash
@@ -86,19 +110,25 @@
    - API Gateway with `/hello` endpoint
    - IAM roles and policies
 
-3. **Add hosting**:
+3. **Set up API Gateway URL**:
+   ```bash
+   # Extract API Gateway URL and set environment variables
+   node setup-api-url.js
+   ```
+
+4. **Add hosting**:
    ```bash
    amplify add hosting
    ```
    - Select: `Amazon CloudFront and S3`
    - Follow the prompts
 
-4. **Deploy frontend**:
+5. **Deploy frontend**:
    ```bash
    amplify publish
    ```
 
-#### Option 2: Amplify Console (Git-based)
+### Option 2: Amplify Console (Git-based)
 
 1. **Push code to Git repository** (GitHub, GitLab, etc.)
 
@@ -112,10 +142,16 @@
    - The `amplify.yml` file is already configured
    - Amplify will automatically detect the React app
 
-4. **Deploy**:
+4. **Set environment variables**:
+   - Go to App settings → Environment variables
+   - Add: `REACT_APP_API_URL = your-api-gateway-url`
+   - You can get the URL using: `node get-api-url-aws.js`
+
+5. **Deploy**:
    - Click "Save and deploy"
-   - Wait for the build to complete#
-# 📁 Project Structure
+   - Wait for the build to complete
+
+## 📁 Project Structure
 
 ```
 helloworld-amplify-app/
@@ -142,6 +178,12 @@ helloworld-amplify-app/
 │   └── index.js
 ├── amplify.yml
 ├── package.json
+├── .env (created by setup scripts)
+├── setup-api-url.js (robust API URL setup)
+├── set-amplify-env.js (Amplify environment management)
+├── get-api-url-aws.js (API URL extraction)
+├── set-env.js (local environment setup)
+├── test-api.js (API testing)
 └── README.md
 ```
 
@@ -149,9 +191,25 @@ helloworld-amplify-app/
 
 ### Environment Variables
 
-For local development, you can create a `.env` file:
+The application uses `REACT_APP_API_URL` to connect to the backend API. This can be set in several ways:
+
+**Local Development:**
+```bash
+# Create .env file
+echo REACT_APP_API_URL=https://your-api-id.execute-api.region.amazonaws.com/main > .env
 ```
-REACT_APP_API_URL=https://your-api-id.execute-api.region.amazonaws.com/dev
+
+**Amplify Console:**
+- Go to App settings → Environment variables
+- Add: `REACT_APP_API_URL = your-api-gateway-url`
+
+**Automated Setup:**
+```bash
+# Full automated setup (requires AWS CLI)
+node setup-api-url.js
+
+# Amplify Console only
+node set-amplify-env.js
 ```
 
 ### API Endpoint
@@ -160,6 +218,40 @@ After deployment, your API will be available at:
 ```
 https://{api-id}.execute-api.{region}.amazonaws.com/{stage}/hello
 ```
+
+## 🛠️ Robust Setup Scripts
+
+### `setup-api-url.js`
+Complete end-to-end setup that:
+- Extracts API Gateway URL from CloudFormation outputs
+- Updates local .env file
+- Provides Amplify Console setup instructions
+- Includes comprehensive error handling
+
+### `set-amplify-env.js`
+Amplify Console environment variable management:
+- Finds your Amplify app and branch automatically
+- Sets environment variables via AWS CLI
+- Triggers automatic redeployment
+- Preserves existing environment variables
+
+### `get-api-url-aws.js`
+API Gateway URL extraction:
+- Multiple extraction methods (CloudFormation, API Gateway)
+- Detailed logging and debugging
+- Fallback instructions
+
+### `set-env.js`
+Local environment variable setup:
+- Interactive URL input
+- Format validation
+- .env file creation
+
+### `test-api.js`
+API endpoint testing:
+- Tests the API Gateway endpoint directly
+- Validates CORS configuration
+- Shows response details
 
 ## 🧪 Testing
 
@@ -171,7 +263,11 @@ https://{api-id}.execute-api.{region}.amazonaws.com/{stage}/hello
 
 ### Test the API Directly
 ```bash
-curl https://your-api-id.execute-api.region.amazonaws.com/dev/hello
+# Using the test script
+node test-api.js
+
+# Or using curl
+curl https://your-api-id.execute-api.region.amazonaws.com/main/hello
 ```
 
 Expected response:
@@ -181,20 +277,32 @@ Expected response:
   "timestamp": "2025-01-XX...",
   "requestId": "..."
 }
-```## 🔍 Tro
-ubleshooting
+```
+
+## 🔍 Troubleshooting
 
 ### Common Issues
 
-1. **CORS Errors**:
+1. **"Failed to fetch" Error**:
+   - Check that `REACT_APP_API_URL` is set correctly
+   - Verify the API Gateway URL is accessible
+   - Use `node test-api.js` to test the endpoint directly
+
+2. **Environment Variable Not Set**:
+   - For local development: Check `.env` file exists
+   - For Amplify: Go to App settings → Environment variables
+   - Use `node setup-api-url.js` for automated setup
+
+3. **CORS Errors**:
    - Ensure the Lambda function includes proper CORS headers
    - Check that OPTIONS method is handled
 
-2. **API Not Found**:
+4. **API Not Found**:
    - Verify the API Gateway deployment
    - Check the correct endpoint URL
+   - Use `node get-api-url-aws.js` to find the correct URL
 
-3. **Build Failures**:
+5. **Build Failures**:
    - Ensure Node.js version compatibility
    - Check `amplify.yml` configuration
 
@@ -212,6 +320,15 @@ amplify push
 
 # Delete resources
 amplify delete
+
+# Test API endpoint
+node test-api.js
+
+# Get API Gateway URL
+node get-api-url-aws.js
+
+# Set up environment variables
+node setup-api-url.js
 ```
 
 ## 📊 Architecture Diagram
@@ -245,6 +362,12 @@ To extend this application:
 3. **Add More Endpoints**: Expand the API with additional routes
 4. **Add Testing**: Implement unit and integration tests
 5. **Add Monitoring**: Set up CloudWatch dashboards and alarms
+6. **Add CI/CD**: Enhance deployment pipeline with testing
+
+## 📚 Additional Documentation
+
+- **Robust Setup Guide**: See `ROBUST-SETUP.md` for detailed configuration management
+- **Deployment Guide**: See `DEPLOYMENT.md` for step-by-step deployment instructions
 
 ## 🤝 Contributing
 

@@ -1,6 +1,6 @@
 # AWS Amplify Deployment Guide
 
-This guide provides step-by-step instructions for deploying the HelloWorld Amplify Full Stack App to AWS.
+This guide provides step-by-step instructions for deploying the HelloWorld Amplify Full Stack App to AWS with robust API Gateway URL management.
 
 ## Prerequisites
 
@@ -105,18 +105,29 @@ This will:
 ✔ Successfully pulled backend environment dev from the cloud.
 ✔ All resources are updated in the cloud
 
-REST API endpoint: https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/dev
+REST API endpoint: https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/main
 ```
 
-#### Step 5: Update Frontend Configuration
+#### Step 5: Set Up API Gateway URL (Robust Setup)
 
-After deployment, update your React app to use the actual API endpoint:
-
-1. Note the API endpoint from the previous step
-2. Create a `.env` file in your project root:
-
+**Option A: Automated Setup (Recommended)**
 ```bash
-echo "REACT_APP_API_URL=https://your-api-id.execute-api.region.amazonaws.com/dev" > .env
+# Run the comprehensive setup script
+node setup-api-url.js
+```
+
+This script will:
+- Extract API Gateway URL from CloudFormation outputs
+- Update local .env file
+- Provide instructions for Amplify Console setup
+
+**Option B: Manual Setup**
+```bash
+# Get API Gateway URL
+node get-api-url-aws.js
+
+# Set local environment variable
+node set-env.js
 ```
 
 #### Step 6: Deploy Frontend
@@ -185,20 +196,30 @@ frontend:
       - node_modules/**/*
 ```
 
-#### Step 4: Configure Environment Variables
+#### Step 4: Set Up API Gateway URL
 
-In the Amplify Console:
-1. Go to **App settings** → **Environment variables**
-2. Add any required environment variables
-3. For production, you might want to add:
-   - `NODE_ENV=production`
-   - `REACT_APP_API_URL` (will be auto-configured by Amplify)
+**Option A: Automated Setup (requires AWS CLI)**
+```bash
+# Run the setup script to get API Gateway URL
+node setup-api-url.js
+
+# Set environment variable in Amplify Console
+node set-amplify-env.js
+```
+
+**Option B: Manual Setup**
+1. Get your API Gateway URL:
+   ```bash
+   node get-api-url-aws.js
+   ```
+2. In Amplify Console:
+   - Go to **App settings** → **Environment variables**
+   - Add: `REACT_APP_API_URL = your-api-gateway-url`
 
 #### Step 5: Deploy
 
 1. Click **"Save and deploy"**
 2. Monitor the build process in real-time
-3. Wait for deployment to complete (usually 5-10 minutes)
 
 ## Post-Deployment Verification
 
@@ -216,7 +237,11 @@ In the Amplify Console:
 
 3. **Direct API Test**:
 ```bash
-curl https://your-api-id.execute-api.region.amazonaws.com/dev/hello
+# Using the test script
+node test-api.js
+
+# Or using curl
+curl https://your-api-id.execute-api.region.amazonaws.com/main/hello
 ```
 
 Expected response:
@@ -264,6 +289,25 @@ amplify pull
 amplify delete
 ```
 
+### Robust Setup Commands
+
+```bash
+# Complete API Gateway URL setup
+node setup-api-url.js
+
+# Set Amplify Console environment variables
+node set-amplify-env.js
+
+# Extract API Gateway URL
+node get-api-url-aws.js
+
+# Test API endpoint
+node test-api.js
+
+# Set local environment variable
+node set-env.js
+```
+
 ### AWS CLI Commands
 
 ```bash
@@ -275,46 +319,69 @@ aws apigateway get-rest-apis --query 'items[?contains(name, `helloworld`)]'
 
 # Check CloudFormation stacks
 aws cloudformation list-stacks --query 'StackSummaries[?contains(StackName, `amplify`)]'
+
+# Get CloudFormation outputs (for API Gateway URL)
+aws cloudformation describe-stacks --stack-name amplify-helloworldapp-dev --query 'Stacks[0].Outputs'
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. CORS Errors
+#### 1. "Failed to fetch" Error
+**Symptoms**: Frontend shows "Failed to fetch from backend" error
+**Solution**: 
+- Check that `REACT_APP_API_URL` environment variable is set correctly
+- Use `node test-api.js` to verify API endpoint is accessible
+- Run `node setup-api-url.js` for automated setup
+- Verify API Gateway URL in Amplify Console environment variables
+
+#### 2. Environment Variable Not Set
+**Symptoms**: Frontend shows "Please set REACT_APP_API_URL" error
+**Solution**:
+- For local development: Check `.env` file exists and contains correct URL
+- For Amplify: Go to App settings → Environment variables
+- Use `node set-amplify-env.js` for automated Amplify Console setup
+
+#### 3. CORS Errors
 **Symptoms**: Browser console shows CORS policy errors
 **Solution**: 
 - Verify Lambda function includes CORS headers
 - Check API Gateway CORS configuration
 - Ensure OPTIONS method is properly handled
+- Use `node test-api.js` to check CORS headers
 
-#### 2. API Gateway 403/404 Errors
+#### 4. API Gateway 403/404 Errors
 **Symptoms**: API calls return 403 Forbidden or 404 Not Found
 **Solution**:
 - Verify API Gateway deployment
 - Check resource paths and methods
 - Confirm Lambda permissions
+- Use `node get-api-url-aws.js` to find correct API Gateway URL
 
-#### 3. Build Failures
+#### 5. Build Failures
 **Symptoms**: Amplify build fails during deployment
 **Solution**:
 - Check Node.js version compatibility
 - Verify `amplify.yml` configuration
 - Review build logs in Amplify Console
+- Ensure all dependencies are properly installed
 
-#### 4. Lambda Function Errors
+#### 6. Lambda Function Errors
 **Symptoms**: 500 Internal Server Error from API
 **Solution**:
 - Check CloudWatch logs for the Lambda function
 - Verify function code and dependencies
 - Test function directly in Lambda console
+- Use `node test-api.js` to check API response
 
 ### Getting Help
 
 1. **CloudWatch Logs**: Check logs for Lambda functions and API Gateway
 2. **Amplify Console**: Review build logs and deployment status
-3. **AWS Support**: Use AWS Support Center for account-specific issues
-4. **Community**: AWS Amplify GitHub repository and Stack Overflow
+3. **Robust Setup Scripts**: Use the provided scripts for automated troubleshooting
+4. **AWS Support**: Use AWS Support Center for account-specific issues
+5. **Community**: AWS Amplify GitHub repository and Stack Overflow
 
 ## Cleanup
 
@@ -330,24 +397,15 @@ amplify delete
 
 This will remove:
 - Lambda functions
-- API Gateway
+- API Gateway resources
+- CloudFormation stacks
 - S3 buckets
 - CloudFront distributions
 - IAM roles and policies
-- CloudFormation stacks
 
-## Cost Estimation
+## Additional Resources
 
-**Free Tier Eligible Resources:**
-- Lambda: 1M requests/month free
-- API Gateway: 1M API calls/month free
-- S3: 5GB storage free
-- CloudFront: 50GB data transfer free
-
-**Estimated Monthly Cost (beyond free tier):**
-- Lambda: ~$0.20 per 1M requests
-- API Gateway: ~$3.50 per 1M requests
-- S3: ~$0.023 per GB
-- CloudFront: ~$0.085 per GB
-
-For a simple demo app, costs should remain within the free tier limits.
+- **Robust Setup Guide**: See `ROBUST-SETUP.md` for detailed configuration management
+- **API Testing**: Use `test-api.js` for endpoint validation
+- **Environment Management**: Use `set-amplify-env.js` for automated environment variable setup
+- **URL Extraction**: Use `get-api-url-aws.js` for API Gateway URL discovery
