@@ -64,6 +64,7 @@ function App() {
       console.log('=== REDSHIFT QUERY REQUEST ===');
       console.log('Calling Redshift endpoint:', `${apiUrl}/redshift`);
       console.log('Timestamp:', new Date().toISOString());
+      console.log('Environment API URL:', process.env.REACT_APP_API_URL);
       
       const response = await fetch(`${apiUrl}/redshift`, {
         method: 'GET',
@@ -73,14 +74,40 @@ function App() {
       });
       
       console.log('Response status:', response.status);
+      console.log('Response status text:', response.statusText);
       console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       
       const responseText = await response.text();
       console.log('Raw response body:', responseText);
+      console.log('Response body length:', responseText.length);
       
       if (!response.ok) {
         console.error('HTTP error response:', responseText);
-        throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`);
+        
+        // Try to parse error details
+        let errorDetails = {};
+        try {
+          errorDetails = JSON.parse(responseText);
+        } catch (e) {
+          errorDetails = { rawError: responseText };
+        }
+        
+        // Check for specific API Gateway errors
+        if (response.status === 403) {
+          if (responseText.includes('Missing Authentication Token')) {
+            throw new Error(`API Gateway Error: Endpoint not deployed or not accessible. Status: ${response.status}. Please check if the /redshift methods are properly configured in API Gateway.`);
+          } else {
+            throw new Error(`API Gateway Error: Access denied. Status: ${response.status}. Response: ${responseText}`);
+          }
+        } else if (response.status === 500) {
+          throw new Error(`Lambda Error: Server error. Status: ${response.status}. Check Lambda logs for details. Response: ${responseText}`);
+        } else if (response.status === 502) {
+          throw new Error(`Lambda Error: Bad gateway. Status: ${response.status}. Lambda function may have crashed. Response: ${responseText}`);
+        } else if (response.status === 504) {
+          throw new Error(`Lambda Error: Gateway timeout. Status: ${response.status}. Lambda function may have timed out. Response: ${responseText}`);
+        } else {
+          throw new Error(`HTTP Error: Status ${response.status}. Response: ${responseText}`);
+        }
       }
       
       const data = JSON.parse(responseText);
@@ -88,7 +115,11 @@ function App() {
       setRedshiftData(data);
     } catch (err) {
       console.error('=== REDSHIFT QUERY ERROR ===');
-      console.error('Error details:', err);
+      console.error('Error type:', err.constructor.name);
+      console.error('Error message:', err.message);
+      console.error('Error stack:', err.stack);
+      
+      // Set detailed error message
       setRedshiftError(`Failed to query Redshift: ${err.message}`);
     } finally {
       setRedshiftLoading(false);
