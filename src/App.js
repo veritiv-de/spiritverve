@@ -1,6 +1,50 @@
 import React, { useState } from 'react';
 import './App.css';
 
+// Helper function to determine data type
+const getDataType = (value) => {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'boolean') return 'boolean';
+  if (typeof value === 'string') {
+    // Check if it's a date
+    if (/^\d{4}-\d{2}-\d{2}/.test(value) || /^\d{2}\/\d{2}\/\d{4}/.test(value)) {
+      return 'date';
+    }
+    // Check if it's a number string
+    if (!isNaN(value) && value.trim() !== '') return 'number';
+    return 'string';
+  }
+  return 'string';
+};
+
+// Helper function to format values based on data type
+const formatValue = (value, dataType) => {
+  if (value === null || value === undefined) return 'NULL';
+  
+  switch (dataType) {
+    case 'number':
+      return typeof value === 'string' ? parseFloat(value).toLocaleString() : value.toLocaleString();
+    case 'date':
+      try {
+        const date = new Date(value);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+      } catch {
+        return value;
+      }
+    case 'boolean':
+      return value ? '✓' : '✗';
+    case 'string':
+      // Truncate long strings
+      if (value.length > 50) {
+        return value.substring(0, 47) + '...';
+      }
+      return value;
+    default:
+      return String(value);
+  }
+};
+
 function App() {
   const [backendMessage, setBackendMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -171,23 +215,44 @@ function App() {
           
           {redshiftData && (
             <div className="redshift-results">
-              <h3>Query Results:</h3>
+              <h3>Query Results</h3>
+              
+              {/* Summary Statistics */}
+              <div className="results-summary">
+                <div className="summary-item">
+                  <div className="summary-label">Rows Returned</div>
+                  <div className="summary-value">{redshiftData.rowCount}</div>
+                </div>
+                <div className="summary-item">
+                  <div className="summary-label">Columns</div>
+                  <div className="summary-value">{redshiftData.data.length > 0 ? Object.keys(redshiftData.data[0]).length : 0}</div>
+                </div>
+                <div className="summary-item">
+                  <div className="summary-label">Request ID</div>
+                  <div className="summary-value">{redshiftData.requestId.substring(0, 8)}...</div>
+                </div>
+                <div className="summary-item">
+                  <div className="summary-label">Timestamp</div>
+                  <div className="summary-value">{new Date(redshiftData.timestamp).toLocaleTimeString()}</div>
+                </div>
+              </div>
+              
               <p><strong>Message:</strong> {redshiftData.message}</p>
-              <p><strong>Rows Returned:</strong> {redshiftData.rowCount}</p>
-              <p><strong>Timestamp:</strong> {redshiftData.timestamp}</p>
-              <p><strong>Request ID:</strong> {redshiftData.requestId}</p>
               
               {redshiftData.debug && (
                 <div className="debug-info">
-                  <h4>Debug Information:</h4>
-                  <p><strong>Connection Host:</strong> {redshiftData.debug.connectionHost}</p>
-                  <p><strong>Connection Port:</strong> {redshiftData.debug.connectionPort}</p>
+                  <h4>Connection Details</h4>
+                  <p><strong>Host:</strong> {redshiftData.debug.connectionHost}</p>
+                  <p><strong>Port:</strong> {redshiftData.debug.connectionPort}</p>
                   <p><strong>Database:</strong> {redshiftData.debug.database}</p>
                   <p><strong>User:</strong> {redshiftData.debug.user}</p>
+                  {redshiftData.debug.vpcSecurityGroup && (
+                    <p><strong>VPC Security Group:</strong> {redshiftData.debug.vpcSecurityGroup}</p>
+                  )}
                 </div>
               )}
               
-              <h4>Data:</h4>
+              <h4>Data Preview</h4>
               <div className="data-table">
                 <table>
                   <thead>
@@ -202,9 +267,21 @@ function App() {
                   <tbody>
                     {redshiftData.data.map((row, index) => (
                       <tr key={index}>
-                        {Object.values(row).map((value, valueIndex) => (
-                          <td key={valueIndex}>{String(value)}</td>
-                        ))}
+                        {Object.entries(row).map(([key, value], valueIndex) => {
+                          // Determine data type for better formatting
+                          const dataType = getDataType(value);
+                          const formattedValue = formatValue(value, dataType);
+                          
+                          return (
+                            <td 
+                              key={valueIndex} 
+                              data-type={dataType}
+                              title={typeof value === 'string' && value.length > 50 ? value : undefined}
+                            >
+                              {formattedValue}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>

@@ -5,7 +5,7 @@ const { Client } = require('pg');
 
 exports.handler = async (event) => {
     console.log(`=== LAMBDA FUNCTION STARTED ===`);
-    // Force deployment - 2025-07-29T18:00:00.000Z
+    // Force deployment - 2025-07-29T18:30:00.000Z
     console.log(`Event: ${JSON.stringify(event, null, 2)}`);
     console.log(`HTTP Method: ${event.httpMethod}`);
     console.log(`Path: ${event.path}`);
@@ -49,30 +49,43 @@ exports.handler = async (event) => {
         console.log('=== REDSHIFT QUERY STARTED ===');
         
         try {
+            // Get Redshift connection details from environment variables or use defaults
+            const redshiftConfig = {
+                host: process.env.REDSHIFT_HOST || 'dev-redshift-instance.cbgfkhkxtpk8.us-east-1.redshift.amazonaws.com',
+                port: parseInt(process.env.REDSHIFT_PORT) || 5439,
+                database: process.env.REDSHIFT_DATABASE || 'veritiv',
+                user: process.env.REDSHIFT_USER || 'hackathon',
+                password: process.env.REDSHIFT_PASSWORD || 'Hackathon2024!', // Updated default password
+                ssl: process.env.REDSHIFT_SSL !== 'false' // Default to true unless explicitly set to false
+            };
+            
             // Log connection details (without password)
             const connectionConfig = {
-                host: 'dev-redshift-instance.cbgfkhkxtpk8.us-east-1.redshift.amazonaws.com',
-                port: 5439,
-                database: 'veritiv',
-                user: 'hackathon',
-                ssl: true
+                host: redshiftConfig.host,
+                port: redshiftConfig.port,
+                database: redshiftConfig.database,
+                user: redshiftConfig.user,
+                ssl: redshiftConfig.ssl
             };
             
             console.log('Redshift connection config:', JSON.stringify(connectionConfig, null, 2));
             console.log('Attempting to connect to Redshift...');
+            console.log('VPC Configuration: Lambda is running in VPC with security group sg-045e23d0687f76c74');
 
             // Redshift connection configuration
-            const client = new Client({
-                host: 'dev-redshift-instance.cbgfkhkxtpk8.us-east-1.redshift.amazonaws.com',
-                port: 5439,
-                database: 'veritiv',
-                user: 'hackathon',
-                password: 'dedevAI25!',
-                ssl: true
-            });
+            const client = new Client(redshiftConfig);
 
             console.log('Client created, attempting connection...');
+            
+            // Set connection timeout
+            const connectionTimeout = setTimeout(() => {
+                console.error('Connection timeout after 30 seconds');
+                throw new Error('Connection timeout - check VPC and security group configuration');
+            }, 30000);
+            
             await client.connect();
+            clearTimeout(connectionTimeout);
+            
             console.log('✅ Successfully connected to Redshift!');
 
             // Execute the query
@@ -105,7 +118,9 @@ exports.handler = async (event) => {
                         connectionHost: connectionConfig.host,
                         connectionPort: connectionConfig.port,
                         database: connectionConfig.database,
-                        user: connectionConfig.user
+                        user: connectionConfig.user,
+                        vpcSecurityGroup: 'sg-045e23d0687f76c74',
+                        vpcSubnets: ['subnet-0e0626912b145dd06', 'subnet-0f02991a028412e8e']
                     }
                 })
             };
@@ -138,7 +153,8 @@ exports.handler = async (event) => {
                 userMessage = 'Cannot connect to Redshift. Check if the cluster is running and accessible from this VPC.';
                 debugInfo = { 
                     suggestion: 'Verify VPC configuration, security groups, and cluster status',
-                    code: error.code 
+                    code: error.code,
+                    vpcCheck: 'Lambda is in VPC sg-045e23d0687f76c74 - check outbound rules allow port 5439'
                 };
             } else if (error.code === 'ENOTFOUND') {
                 errorType = 'Host Not Found';
@@ -152,7 +168,9 @@ exports.handler = async (event) => {
                 userMessage = 'Connection to Redshift timed out. Check network connectivity and security groups.';
                 debugInfo = { 
                     suggestion: 'Verify security groups allow Lambda to connect to Redshift on port 5439',
-                    code: error.code 
+                    code: error.code,
+                    vpcCheck: 'Lambda security group sg-045e23d0687f76c74 needs outbound rule for port 5439',
+                    redshiftCheck: 'Redshift security group needs inbound rule from Lambda security group'
                 };
             } else if (error.code === '28P01') {
                 errorType = 'Authentication Failed';
@@ -197,7 +215,9 @@ exports.handler = async (event) => {
                         connectionHost: 'dev-redshift-instance.cbgfkhkxtpk8.us-east-1.redshift.amazonaws.com',
                         connectionPort: 5439,
                         database: 'veritiv',
-                        user: 'hackathon'
+                        user: 'hackathon',
+                        vpcSecurityGroup: 'sg-045e23d0687f76c74',
+                        vpcSubnets: ['subnet-0e0626912b145dd06', 'subnet-0f02991a028412e8e']
                     }
                 })
             };
