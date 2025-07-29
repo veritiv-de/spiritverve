@@ -13,11 +13,18 @@ function App() {
     try {
       // This will be the Amplify API endpoint
       // In production, this will be replaced with the actual API Gateway URL
-      const apiUrl = process.env.REACT_APP_API_URL || '/api/hello';
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://your-api-id.execute-api.us-east-1.amazonaws.com/dev';
+      console.log('Calling API URL:', `${apiUrl}/hello`);
+      
       const response = await fetch(`${apiUrl}/hello`);
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
       
       const data = await response.json();

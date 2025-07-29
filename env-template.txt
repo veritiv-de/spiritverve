@@ -1,0 +1,3 @@
+# Copy this content to a .env file in your project root
+# Replace 'your-api-id' with your actual API Gateway ID from AWS Console
+REACT_APP_API_URL=https://your-api-id.execute-api.us-east-1.amazonaws.com/dev 
