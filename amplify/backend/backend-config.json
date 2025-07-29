@@ -27,20 +27,5 @@
       "service": "amplifyhosting",
       "type": "manual"
     }
-  },
-  "custom": {
-    "apiGatewayUrl": {
-      "service": "custom",
-      "providerPlugin": "awscloudformation",
-      "dependsOn": [
-        {
-          "category": "api",
-          "resourceName": "helloworldapi",
-          "attributes": [
-            "RootUrl"
-          ]
-        }
-      ]
-    }
   }
 }

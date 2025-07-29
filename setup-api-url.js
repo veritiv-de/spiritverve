@@ -39,12 +39,13 @@ class ApiUrlSetup {
       
       const outputsJson = JSON.parse(outputs);
       
-      // Look for API Gateway URL in outputs
+      // Look for API Gateway URL in outputs - check multiple possible output names
       for (const output of outputsJson) {
         if (output.OutputKey && (
           output.OutputKey.includes('ApiGateway') || 
           output.OutputKey.includes('InvokeUrl') ||
-          output.OutputKey.includes('RootUrl')
+          output.OutputKey.includes('RootUrl') ||
+          output.OutputKey.includes('Url')
         ) && output.OutputValue) {
           console.log(`✅ Found API Gateway URL in CloudFormation: ${output.OutputValue}`);
           return output.OutputValue;
@@ -65,9 +66,13 @@ class ApiUrlSetup {
       for (const api of apisJson.items) {
         if (api.name && api.name.includes('helloworldapi')) {
           const apiId = api.id;
-          const apiUrl = `https://${apiId}.execute-api.${this.region}.amazonaws.com/main`;
-          console.log(`✅ Found API Gateway URL: ${apiUrl}`);
-          return apiUrl;
+          // Try different stage names
+          const possibleStages = ['main', 'dev', 'prod'];
+          for (const stage of possibleStages) {
+            const apiUrl = `https://${apiId}.execute-api.${this.region}.amazonaws.com/${stage}`;
+            console.log(`✅ Found API Gateway URL: ${apiUrl}`);
+            return apiUrl;
+          }
         }
       }
 
@@ -87,13 +92,6 @@ class ApiUrlSetup {
     console.log('');
 
     try {
-      // Method 1: Try using Amplify CLI
-      console.log('📋 Attempting to set via Amplify CLI...');
-      execSync(
-        `amplify env checkout ${this.env}`,
-        { encoding: 'utf8', stdio: 'pipe' }
-      );
-
       // Note: Amplify CLI doesn't directly support setting environment variables for hosting
       // So we'll provide instructions for manual setup
       console.log('ℹ️  Amplify CLI doesn\'t directly support setting hosting environment variables.');

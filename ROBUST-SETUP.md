@@ -1,11 +1,11 @@
 # Robust API Gateway URL Setup Guide
 
-This guide provides automated solutions for extracting API Gateway URLs from CloudFormation and setting them as environment variables in Amplify Console.
+This guide provides automated solutions for extracting API Gateway URLs from existing CloudFormation outputs and setting them as environment variables in Amplify Console.
 
 ## 🎯 Overview
 
 The robust setup includes:
-1. **Automated CloudFormation Output Extraction** - Gets API Gateway URL from CloudFormation stacks
+1. **Automated CloudFormation Output Extraction** - Gets API Gateway URL from existing CloudFormation stacks
 2. **Amplify Console Environment Variable Management** - Sets environment variables automatically
 3. **Local Development Support** - Updates local .env files
 4. **Error Handling & Fallbacks** - Provides manual instructions when automation fails
@@ -37,18 +37,17 @@ node set-env.js
 
 ### 1. CloudFormation Output Extraction
 
-The system automatically extracts API Gateway URLs from CloudFormation outputs:
+The system automatically extracts API Gateway URLs from existing CloudFormation outputs:
 
 **What it does:**
 - Reads your Amplify project configuration
-- Queries CloudFormation stacks for API Gateway outputs
+- Queries existing CloudFormation stacks for API Gateway outputs
 - Falls back to direct API Gateway queries if needed
 - Provides detailed logging and error handling
 
 **Files involved:**
-- `amplify/backend/backend-config.json` - Custom resource configuration
-- `amplify/backend/custom/apiGatewayUrl/` - CloudFormation templates
 - `setup-api-url.js` - Main extraction script
+- `get-api-url-aws.js` - Alternative extraction methods
 
 ### 2. Amplify Console Environment Variable Management
 
@@ -73,38 +72,27 @@ Updates local .env files for development:
 - Validates API Gateway URL format
 - Provides development environment consistency
 
-## 🔧 Configuration Files
+## 🔧 How It Works
 
-### Backend Configuration (`amplify/backend/backend-config.json`)
-```json
-{
-  "custom": {
-    "apiGatewayUrl": {
-      "service": "custom",
-      "providerPlugin": "awscloudformation",
-      "dependsOn": [
-        {
-          "category": "api",
-          "resourceName": "helloworldapi",
-          "attributes": ["RootUrl"]
-        }
-      ]
-    }
-  }
-}
-```
+### CloudFormation Output Detection
+The scripts look for API Gateway URLs in CloudFormation outputs with these patterns:
+- `ApiGateway*`
+- `InvokeUrl*`
+- `RootUrl*`
+- `*Url*`
 
-### CloudFormation Template (`amplify/backend/custom/apiGatewayUrl/`)
-- Exposes API Gateway URL as CloudFormation output
-- Makes URL available for extraction by scripts
-- Provides consistent naming across environments
+### API Gateway Direct Query
+If CloudFormation outputs don't contain the URL, the scripts:
+- Query API Gateway directly
+- Find APIs with names containing 'helloworldapi'
+- Try multiple stage names: 'main', 'dev', 'prod'
 
 ## 🛠️ Scripts Overview
 
 ### `setup-api-url.js`
 **Purpose:** Complete end-to-end setup
 **Features:**
-- Extracts API Gateway URL from CloudFormation
+- Extracts API Gateway URL from existing CloudFormation outputs
 - Updates local .env file
 - Provides Amplify Console setup instructions
 - Comprehensive error handling
@@ -177,7 +165,7 @@ If automation fails, use manual steps:
 
 ### Initial Setup
 ```bash
-# 1. Deploy backend
+# 1. Deploy backend (if not already deployed)
 amplify push
 
 # 2. Run robust setup
