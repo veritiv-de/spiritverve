@@ -14,9 +14,22 @@ function App() {
       // This will be the Amplify API endpoint
       // In production, this will be replaced with the actual API Gateway URL
       const apiUrl = process.env.REACT_APP_API_URL || 'https://your-api-id.execute-api.us-east-1.amazonaws.com/dev';
-      console.log('Calling API URL:', `${apiUrl}/hello`);
       
-      const response = await fetch(`${apiUrl}/hello`);
+      console.log('Environment variable REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+      console.log('Using API URL:', apiUrl);
+      console.log('Full endpoint URL:', `${apiUrl}/hello`);
+      
+      // Check if we're using the placeholder URL
+      if (apiUrl.includes('your-api-id')) {
+        throw new Error('Please set REACT_APP_API_URL environment variable with your actual API Gateway URL. See env-template.txt for instructions.');
+      }
+      
+      const response = await fetch(`${apiUrl}/hello`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
