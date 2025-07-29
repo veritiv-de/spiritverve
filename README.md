@@ -1,45 +1,64 @@
-# HelloWorld Amplify Full Stack App
+# SpiritVerve - AWS Amplify Full Stack App with Redshift Integration
 
-🎯 **Goal**: A minimal full-stack web application using Node.js and React, hosted via AWS Amplify. The application displays "Hello World" on a frontend web page and confirms backend API connectivity by fetching the same string from a Node.js-powered API endpoint.
+🎯 **Goal**: A full-stack web application using Node.js and React, hosted via AWS Amplify, featuring both basic API connectivity and advanced Redshift data querying capabilities with beautiful data visualization.
 
 ## 🧱 Architecture Overview
 
-- **Frontend**: React (SPA)
-- **Backend**: Node.js Lambda Function
+- **Frontend**: React (SPA) with enhanced data table formatting
+- **Backend**: Node.js Lambda Function with Redshift connectivity
+- **Database**: Amazon Redshift for data warehousing
 - **Hosting**: AWS Amplify
 - **API**: API Gateway with Lambda integration
 - **Deployment**: Continuous Deployment via Amplify Console
 - **Configuration**: Robust API Gateway URL management
+- **Networking**: VPC configuration for Lambda-Redshift connectivity
 
 ## 🛠️ Technology Stack
 
 | Layer | Tool / Framework |
 |-------|------------------|
-| Frontend | React |
+| Frontend | React with enhanced CSS styling |
 | Backend | Node.js (Lambda) |
+| Database | Amazon Redshift |
 | Hosting | AWS Amplify |
 | Deployment | Amplify Console CI/CD |
 | API Routing | API Gateway + Lambda |
 | Configuration | Automated CloudFormation output extraction |
-| Data | None (static string only) |
+| Data Visualization | Custom React components with responsive tables |
 | Source Control | Git |
 
 ## ✅ Features
 
 ### Frontend
-- React app with a single page
-- Displays: "Hello from the frontend!"
+- React app with modern, responsive design
+- Displays: "Hello from the frontend!" message
+- **Enhanced Redshift data table** with beautiful formatting
+- **Summary statistics grid** showing query metrics
+- **Smart data type detection** and formatting (numbers, dates, booleans)
 - Button to call backend API and display returned message
-- Error handling and loading states
+- **Redshift query button** with loading states and error handling
+- Error handling and loading states for all operations
 - Responsive design with modern styling
 - Robust API URL configuration with fallbacks
 
 ### Backend
-- API endpoint: `/hello`
-- Returns JSON: `{ message: "Hello from the backend!" }`
+- **Two API endpoints**: `/hello` and `/redshift`
+- `/hello` returns JSON: `{ message: "Hello from the backend!" }`
+- **`/redshift` executes queries** and returns formatted data
 - Node.js Lambda function deployed via Amplify
+- **VPC configuration** for Redshift connectivity
+- **Environment variable support** for Redshift credentials
 - CORS configured for frontend-backend communication
 - Proper error handling and logging
+- **Connection timeout handling** and retry logic
+
+### Database Integration
+- **Amazon Redshift connectivity** via Lambda function
+- **Secure VPC configuration** with proper security groups
+- **Environment-based configuration** for Redshift credentials
+- **Query execution** with result formatting
+- **Error handling** for connection and authentication issues
+- **Debug information** for troubleshooting
 
 ### Configuration Management
 - **Automated API Gateway URL extraction** from CloudFormation outputs
@@ -47,6 +66,7 @@
 - **Local development support** with .env file management
 - **Multiple fallback methods** for URL discovery
 - **Comprehensive error handling** and debugging
+- **Redshift credential management** via environment variables
 
 ## 🚀 Quick Start
 
@@ -154,7 +174,7 @@
 ## 📁 Project Structure
 
 ```
-helloworld-amplify-app/
+spiritverve/
 ├── amplify/
 │   ├── backend/
 │   │   ├── api/
@@ -164,7 +184,7 @@ helloworld-amplify-app/
 │   │   ├── function/
 │   │   │   └── helloWorld/
 │   │   │       ├── src/
-│   │   │       │   ├── index.js
+│   │   │       │   ├── index.js (updated with Redshift logic)
 │   │   │       │   └── package.json
 │   │   │       ├── helloWorld-cloudformation-template.json
 │   │   │       └── function-parameters.json
@@ -173,8 +193,8 @@ helloworld-amplify-app/
 ├── public/
 │   └── index.html
 ├── src/
-│   ├── App.js
-│   ├── App.css
+│   ├── App.js (enhanced with Redshift query UI)
+│   ├── App.css (enhanced table styling)
 │   └── index.js
 ├── amplify.yml
 ├── package.json
@@ -184,6 +204,8 @@ helloworld-amplify-app/
 ├── get-api-url-aws.js (API URL extraction)
 ├── set-env.js (local environment setup)
 ├── test-api.js (API testing)
+├── test-redshift-endpoint.js (Redshift endpoint testing)
+├── test-redshift-password.js (Redshift password testing)
 └── README.md
 ```
 
@@ -191,7 +213,33 @@ helloworld-amplify-app/
 
 ### Environment Variables
 
-The application uses `REACT_APP_API_URL` to connect to the backend API. This can be set in several ways:
+The application uses several environment variables for configuration:
+
+#### API Gateway URL
+**Variable**: `REACT_APP_API_URL`
+**Purpose**: Connect frontend to backend API
+**Format**: `https://your-api-id.execute-api.region.amazonaws.com/main`
+
+#### Redshift Configuration (Lambda Environment Variables)
+**Variables**:
+- `REDSHIFT_HOST` - Redshift cluster endpoint
+- `REDSHIFT_PORT` - Redshift port (default: 5439)
+- `REDSHIFT_DATABASE` - Database name
+- `REDSHIFT_USER` - Username for Redshift
+- `REDSHIFT_PASSWORD` - Password for Redshift user
+- `REDSHIFT_SSL` - SSL connection (default: true)
+
+**Example Lambda Environment Variables**:
+```
+REDSHIFT_HOST=dev-redshift-instance.cbgfkhkxtpk8.us-east-1.redshift.amazonaws.com
+REDSHIFT_PORT=5439
+REDSHIFT_DATABASE=veritiv
+REDSHIFT_USER=hackathon
+REDSHIFT_PASSWORD=your-secure-password
+REDSHIFT_SSL=true
+```
+
+### Setting Environment Variables
 
 **Local Development:**
 ```bash
@@ -203,6 +251,12 @@ echo REACT_APP_API_URL=https://your-api-id.execute-api.region.amazonaws.com/main
 - Go to App settings → Environment variables
 - Add: `REACT_APP_API_URL = your-api-gateway-url`
 
+**Lambda Function (Redshift credentials):**
+- Go to AWS Lambda Console
+- Select your function (`helloWorld-main`)
+- Go to Configuration → Environment variables
+- Add the Redshift configuration variables
+
 **Automated Setup:**
 ```bash
 # Full automated setup (requires AWS CLI)
@@ -212,11 +266,80 @@ node setup-api-url.js
 node set-amplify-env.js
 ```
 
-### API Endpoint
+### API Endpoints
 
 After deployment, your API will be available at:
 ```
 https://{api-id}.execute-api.{region}.amazonaws.com/{stage}/hello
+https://{api-id}.execute-api.{region}.amazonaws.com/{stage}/redshift
+```
+
+### VPC Configuration
+
+The Lambda function is configured with VPC settings for Redshift connectivity:
+- **Security Group**: `sg-045e23d0687f76c74`
+- **Subnets**: `subnet-0e0626912b145dd06`, `subnet-0f02991a028412e8e`
+- **Outbound Rules**: Must allow port 5439 to Redshift cluster
+
+## 🧪 Testing
+
+### Test the Frontend
+1. Open the deployed app URL
+2. Verify "Hello from the frontend!" is displayed
+3. Click "Call Backend API" button
+4. Verify "Hello from the backend!" appears
+5. **Click "Query Redshift" button**
+6. **Verify Redshift data is displayed in formatted table**
+
+### Test the API Directly
+```bash
+# Test hello endpoint
+node test-api.js
+
+# Test Redshift endpoint
+node test-redshift-endpoint.js
+
+# Or using curl
+curl https://your-api-id.execute-api.region.amazonaws.com/main/hello
+curl https://your-api-id.execute-api.region.amazonaws.com/main/redshift
+```
+
+### Test Redshift Connectivity
+```bash
+# Test Redshift password (if authentication issues)
+node test-redshift-password.js
+```
+
+### Expected Responses
+
+**Hello Endpoint:**
+```json
+{
+  "message": "Hello from the backend!",
+  "timestamp": "2025-01-XX...",
+  "requestId": "..."
+}
+```
+
+**Redshift Endpoint:**
+```json
+{
+  "message": "Redshift query executed successfully!",
+  "timestamp": "2025-01-XX...",
+  "requestId": "...",
+  "rowCount": 10,
+  "columns": ["column1", "column2", ...],
+  "data": [
+    {"column1": "value1", "column2": "value2", ...},
+    ...
+  ],
+  "debug": {
+    "connectionHost": "dev-redshift-instance.cbgfkhkxtpk8.us-east-1.redshift.amazonaws.com",
+    "connectionPort": 5439,
+    "database": "veritiv",
+    "user": "hackathon"
+  }
+}
 ```
 
 ## 🛠️ Robust Setup Scripts
@@ -253,31 +376,17 @@ API endpoint testing:
 - Validates CORS configuration
 - Shows response details
 
-## 🧪 Testing
+### `test-redshift-endpoint.js`
+Redshift endpoint testing:
+- Tests the `/redshift` endpoint specifically
+- Validates Redshift query execution
+- Shows detailed response and error information
 
-### Test the Frontend
-1. Open the deployed app URL
-2. Verify "Hello from the frontend!" is displayed
-3. Click "Call Backend API" button
-4. Verify "Hello from the backend!" appears
-
-### Test the API Directly
-```bash
-# Using the test script
-node test-api.js
-
-# Or using curl
-curl https://your-api-id.execute-api.region.amazonaws.com/main/hello
-```
-
-Expected response:
-```json
-{
-  "message": "Hello from the backend!",
-  "timestamp": "2025-01-XX...",
-  "requestId": "..."
-}
-```
+### `test-redshift-password.js`
+Redshift password testing:
+- Tests common passwords for Redshift authentication
+- Helps troubleshoot connection issues
+- Provides debugging information for credential problems
 
 ## 🔍 Troubleshooting
 
@@ -306,6 +415,23 @@ Expected response:
    - Ensure Node.js version compatibility
    - Check `amplify.yml` configuration
 
+6. **Redshift Connection Timeout**:
+   - Verify VPC security group outbound rules allow port 5439
+   - Check Redshift cluster is accessible from Lambda VPC
+   - Verify Redshift security group allows inbound from Lambda security group
+   - Use `node test-redshift-password.js` to test credentials
+
+7. **Redshift Authentication Failed**:
+   - Check Redshift user credentials in Lambda environment variables
+   - Verify user has proper permissions on the database
+   - Use `node test-redshift-password.js` to test different passwords
+   - Reset Redshift user password if needed
+
+8. **Redshift Query Errors**:
+   - Check table and schema names are correct
+   - Verify user has SELECT permissions on the table
+   - Review Lambda CloudWatch logs for detailed error messages
+
 ### Useful Commands
 
 ```bash
@@ -321,8 +447,12 @@ amplify push
 # Delete resources
 amplify delete
 
-# Test API endpoint
+# Test API endpoints
 node test-api.js
+node test-redshift-endpoint.js
+
+# Test Redshift connectivity
+node test-redshift-password.js
 
 # Get API Gateway URL
 node get-api-url-aws.js
@@ -338,13 +468,22 @@ node setup-api-url.js
 │   React App     │    │   API Gateway    │    │ Lambda Function │
 │  (Frontend)     │───▶│                  │───▶│   (Backend)     │
 │                 │    │  /hello endpoint │    │                 │
+│ • Enhanced UI   │    │  /redshift       │    │ • VPC Config    │
+│ • Data Tables   │    │                  │    │ • Redshift Conn │
+│ • Summary Stats │    │                  │    │ • Error Handling│
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                        │                        │
          ▼                        ▼                        ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   CloudFront    │    │   CloudWatch     │    │   CloudWatch    │
-│      + S3       │    │     Logs         │    │     Logs        │
+│   CloudFront    │    │   CloudWatch     │    │   Amazon        │
+│      + S3       │    │     Logs         │    │   Redshift      │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                       ┌──────────────────┐    ┌─────────────────┐
+                       │   VPC Security   │    │   Data          │
+                       │     Groups       │    │   Warehouse     │
+                       └──────────────────┘    └─────────────────┘
 ```
 
 ## 🔒 Security

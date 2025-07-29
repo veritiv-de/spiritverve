@@ -1,6 +1,6 @@
-# AWS Amplify Deployment Guide
+# AWS Amplify Deployment Guide - SpiritVerve with Redshift Integration
 
-This guide provides step-by-step instructions for deploying the HelloWorld Amplify Full Stack App to AWS with robust API Gateway URL management.
+This guide provides step-by-step instructions for deploying the SpiritVerve Amplify Full Stack App to AWS with Redshift integration and robust API Gateway URL management.
 
 ## Prerequisites
 
@@ -11,6 +11,8 @@ Before deploying, ensure you have:
 - **Amplify CLI**: Installed globally (`npm install -g @aws-amplify/cli`)
 - **Node.js**: Version 18 or later
 - **Git**: For version control (if using Console deployment)
+- **Amazon Redshift**: Active Redshift cluster with accessible data
+- **VPC Configuration**: Proper VPC setup for Lambda-Redshift connectivity
 
 ## Setup AWS CLI
 
@@ -38,6 +40,35 @@ Follow the prompts to:
 1. Sign in to AWS Console
 2. Create an IAM user for Amplify
 3. Set up access keys
+
+## Redshift Configuration
+
+### Step 1: Prepare Redshift Cluster
+
+Ensure your Redshift cluster is properly configured:
+
+1. **Cluster Status**: Verify cluster is available and accessible
+2. **Security Groups**: Configure to allow inbound connections from Lambda
+3. **Database**: Ensure target database and tables exist
+4. **User Permissions**: Create user with appropriate SELECT permissions
+
+### Step 2: Configure VPC for Lambda-Redshift Connectivity
+
+The Lambda function needs VPC access to connect to Redshift:
+
+1. **Identify VPC**: Note the VPC where your Redshift cluster is located
+2. **Security Groups**: Create or identify security group for Lambda
+3. **Subnets**: Select private subnets in the same VPC as Redshift
+4. **Outbound Rules**: Ensure Lambda security group allows outbound to Redshift (port 5439)
+
+### Step 3: Prepare Redshift Credentials
+
+Gather the following information:
+- **Host**: Redshift cluster endpoint
+- **Port**: Usually 5439
+- **Database**: Target database name
+- **Username**: Redshift user with appropriate permissions
+- **Password**: Secure password for the user
 
 ## Deployment Methods
 
@@ -70,13 +101,44 @@ amplify add api
 **Configuration:**
 - Service: `REST`
 - API name: `helloworldapi`
-- Path: `/hello`
+- Path: `/hello` (first endpoint)
 - Lambda source: `Create a new Lambda function`
 - Function name: `helloWorld`
 - Template: `Hello World`
 - Advanced settings: `No`
 
-#### Step 3: Add Hosting
+**Note**: The `/redshift` endpoint will be added automatically when you deploy the updated Lambda function code.
+
+#### Step 3: Configure Lambda VPC Settings
+
+After creating the API, you'll need to update the Lambda function's VPC configuration:
+
+1. **Go to AWS Lambda Console**
+2. **Find your function** (`helloWorld-main`)
+3. **Go to Configuration** → **VPC**
+4. **Configure VPC settings**:
+   - VPC: Select the VPC containing your Redshift cluster
+   - Subnets: Select private subnets in the same VPC
+   - Security Groups: Select or create a security group that allows outbound to Redshift
+
+#### Step 4: Set Redshift Environment Variables
+
+Configure Redshift connection details in Lambda:
+
+1. **Go to AWS Lambda Console**
+2. **Find your function** (`helloWorld-main`)
+3. **Go to Configuration** → **Environment variables**
+4. **Add the following variables**:
+   ```
+   REDSHIFT_HOST=your-redshift-cluster-endpoint
+   REDSHIFT_PORT=5439
+   REDSHIFT_DATABASE=your-database-name
+   REDSHIFT_USER=your-username
+   REDSHIFT_PASSWORD=your-secure-password
+   REDSHIFT_SSL=true
+   ```
+
+#### Step 5: Add Hosting
 
 ```bash
 amplify add hosting
@@ -88,7 +150,7 @@ amplify add hosting
 - Index doc: `index.html`
 - Error doc: `index.html`
 
-#### Step 4: Deploy Backend
+#### Step 6: Deploy Backend
 
 ```bash
 amplify push
@@ -108,7 +170,7 @@ This will:
 REST API endpoint: https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/main
 ```
 
-#### Step 5: Set Up API Gateway URL (Robust Setup)
+#### Step 7: Set Up API Gateway URL (Robust Setup)
 
 **Option A: Automated Setup (Recommended)**
 ```bash
@@ -130,7 +192,7 @@ node get-api-url-aws.js
 node set-env.js
 ```
 
-#### Step 6: Deploy Frontend
+#### Step 8: Deploy Frontend
 
 ```bash
 amplify publish
@@ -235,16 +297,28 @@ node set-amplify-env.js
    - Verify "Hello from the backend!" appears
    - Check browser console for any errors
 
-3. **Direct API Test**:
+3. **Redshift Test**:
+   - Click the "Query Redshift" button
+   - Verify Redshift data is displayed in formatted table
+   - Check summary statistics are shown correctly
+   - Verify table formatting and responsiveness
+
+4. **Direct API Test**:
 ```bash
-# Using the test script
+# Test hello endpoint
 node test-api.js
+
+# Test Redshift endpoint
+node test-redshift-endpoint.js
 
 # Or using curl
 curl https://your-api-id.execute-api.region.amazonaws.com/main/hello
+curl https://your-api-id.execute-api.region.amazonaws.com/main/redshift
 ```
 
-Expected response:
+### Expected Responses
+
+**Hello Endpoint:**
 ```json
 {
   "message": "Hello from the backend!",
@@ -253,14 +327,38 @@ Expected response:
 }
 ```
 
+**Redshift Endpoint:**
+```json
+{
+  "message": "Redshift query executed successfully!",
+  "timestamp": "2025-01-28T...",
+  "requestId": "...",
+  "rowCount": 10,
+  "columns": ["column1", "column2", ...],
+  "data": [
+    {"column1": "value1", "column2": "value2", ...},
+    ...
+  ],
+  "debug": {
+    "connectionHost": "dev-redshift-instance.cbgfkhkxtpk8.us-east-1.redshift.amazonaws.com",
+    "connectionPort": 5439,
+    "database": "veritiv",
+    "user": "hackathon"
+  }
+}
+```
+
 ### Monitor Resources
 
 Check these AWS services in the console:
 - **Lambda**: Verify function is created and has recent invocations
-- **API Gateway**: Check the REST API and test endpoints
+- **API Gateway**: Check the REST API and test endpoints (`/hello` and `/redshift`)
 - **CloudFront**: Verify distribution is deployed
 - **S3**: Check hosting bucket has your files
 - **IAM**: Review created roles and policies
+- **Redshift**: Verify cluster is accessible and queries are executing
+- **VPC**: Check security groups and network connectivity
+- **CloudWatch**: Monitor Lambda logs for Redshift connection issues
 
 ## Useful Commands
 
@@ -301,8 +399,12 @@ node set-amplify-env.js
 # Extract API Gateway URL
 node get-api-url-aws.js
 
-# Test API endpoint
+# Test API endpoints
 node test-api.js
+node test-redshift-endpoint.js
+
+# Test Redshift connectivity
+node test-redshift-password.js
 
 # Set local environment variable
 node set-env.js
@@ -322,6 +424,15 @@ aws cloudformation list-stacks --query 'StackSummaries[?contains(StackName, `amp
 
 # Get CloudFormation outputs (for API Gateway URL)
 aws cloudformation describe-stacks --stack-name amplify-helloworldapp-dev --query 'Stacks[0].Outputs'
+
+# Check Redshift clusters
+aws redshift describe-clusters --query 'Clusters[*].[ClusterIdentifier,Endpoint.Address,Endpoint.Port]'
+
+# Check VPC security groups
+aws ec2 describe-security-groups --filters "Name=group-name,Values=*lambda*" --query 'SecurityGroups[*].[GroupId,GroupName]'
+
+# Check Lambda VPC configuration
+aws lambda get-function-configuration --function-name helloWorld-main --query 'VpcConfig'
 ```
 
 ## Troubleshooting
@@ -374,6 +485,42 @@ aws cloudformation describe-stacks --stack-name amplify-helloworldapp-dev --quer
 - Verify function code and dependencies
 - Test function directly in Lambda console
 - Use `node test-api.js` to check API response
+
+#### 7. Redshift Connection Timeout
+**Symptoms**: Redshift queries return timeout errors
+**Solution**:
+- Verify Lambda VPC configuration matches Redshift VPC
+- Check Lambda security group outbound rules allow port 5439
+- Verify Redshift security group allows inbound from Lambda security group
+- Test Redshift connectivity using `node test-redshift-password.js`
+- Check Redshift cluster is accessible from Lambda subnets
+
+#### 8. Redshift Authentication Failed
+**Symptoms**: "password authentication failed" errors
+**Solution**:
+- Verify Redshift credentials in Lambda environment variables
+- Check user has proper permissions on the database
+- Use `node test-redshift-password.js` to test different passwords
+- Reset Redshift user password if needed
+- Verify SSL settings match Redshift cluster configuration
+
+#### 9. Redshift Query Errors
+**Symptoms**: Table not found or permission denied errors
+**Solution**:
+- Verify table and schema names are correct
+- Check user has SELECT permissions on the target table
+- Review Lambda CloudWatch logs for detailed error messages
+- Test query directly in Redshift query editor
+- Verify database name in environment variables
+
+#### 10. VPC Configuration Issues
+**Symptoms**: Lambda cannot reach Redshift cluster
+**Solution**:
+- Ensure Lambda and Redshift are in the same VPC
+- Verify Lambda subnets have proper route tables
+- Check security group rules for both Lambda and Redshift
+- Verify NAT Gateway configuration if using private subnets
+- Test network connectivity using VPC Flow Logs
 
 ### Getting Help
 
